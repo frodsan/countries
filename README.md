@@ -73,7 +73,7 @@ OPTIONS
 
 - Find countries whose of their names include 'fr' and sort them by area:
 
-      $bin/countries -f name fr -s area
+      $ bin/countries -f name fr -s area
       +-----------------------------------------------------------------------------------------+
       |                                    Countries Summary                                    |
       +-------------------------------------+-----------+------------+--------------------------+
