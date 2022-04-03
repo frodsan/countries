@@ -1,0 +1,59 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "clap"
+require "terminal-table"
+require_relative "../lib/countries"
+
+options = {
+  sort_by: :name
+}
+
+command = Clap.run(
+  ARGV,
+  "-s" => lambda { |s| options[:sort_by] = s.to_sym },
+  "-f" => lambda { |attr, value| options[:filter_by] = { attr: attr.to_s.downcase, value: value } }
+).first || "summary"
+
+cli = Countries::CLI.new
+
+unless cli.respond_to?(command)
+  puts format("Command %p not found", command)
+  exit(1)
+end
+
+private def print_summary(summary)
+  rows = summary.entries.map do |e|
+    [e.name, e.region, e.area, e.population]
+  end
+
+  table = Terminal::Table.new(
+    title: "Countries Summary",
+    headings: ["Name", "Region", "Area (mi²)", "Population (in millions)"],
+    rows: rows
+  )
+  table.align_column(2, :right)
+  table.align_column(3, :right)
+
+  table.add_separator
+  table.add_row ["Population average", nil, nil, summary.population_average]
+
+  table.add_separator
+  min = summary.entry_with_min_area
+  table.add_row ["Smallest area: #{min.name}", min.region, min.area, min.population]
+
+  max = summary.entry_with_max_area
+  table.add_row ["Biggest area: #{max.name}", max.region, max.area, max.population]
+
+  table.align_column(2, :right)
+  table.align_column(3, :right)
+
+  puts table
+end
+
+begin
+  send(:"print_#{command}", cli.send(command.to_sym, options))
+rescue Countries::API::Error => e
+  puts "Error querying countries API: #{e}"
+  exit(1)
+end
